@@ -1,3 +1,5 @@
+# Maxim Dragos, Data Engineer
+
 from pydantic import BaseModel, Field
 
 

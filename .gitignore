@@ -7,7 +7,7 @@ __pycache__/
 math_service/venv/
 .venv/
 
-requests.db
+math_service/requests.db
 *.db
 
 ../.idea/
