@@ -3,9 +3,11 @@
 # SQLite
 
 import sqlite3
+import os
 from math_service.schemas.log_schema import LogEntry
 
-DB_PATH = 'C:/Endava/EnDevLocal/PYCHARMproj/Dava_X/ms_API_math_comp/requests.db'
+# DB_PATH = 'C:/Endava/EnDevLocal/PYCHARMproj/Dava_X/ms_API_math_comp/requests.db'
+DB_PATH = os.environ.get("DB_PATH", "requests.db")
 print(">>> request_log_model.py loaded!")
 print(">>> DB_PATH is", DB_PATH)
 
