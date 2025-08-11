@@ -5,8 +5,14 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="f5ac88e4-8ee7-4dc3-8e6f-50d8613d6674" name="Changes" comment="">
+      <change afterPath="$PROJECT_DIR$/math_service/services/messaging_service.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/math_service/workers/async_worker.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/math_service/workers/rabbit_consumer.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/math_service/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/math_service/README.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/math_service/app.py" beforeDir="false" afterPath="$PROJECT_DIR$/math_service/app.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/math_service/controllers/math_controller.py" beforeDir="false" afterPath="$PROJECT_DIR$/math_service/controllers/math_controller.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/requests.db" beforeDir="false" afterPath="$PROJECT_DIR$/requests.db" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -16,6 +22,7 @@
   <component name="FileTemplateManagerImpl">
     <option name="RECENT_TEMPLATES">
       <list>
+        <option value="Dockerfile" />
         <option value="Python Script" />
       </list>
     </option>
@@ -35,12 +42,13 @@
   &quot;keyToString&quot;: {
     &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
     &quot;Python.main.executor&quot;: &quot;Run&quot;,
+    &quot;Python.request_log_model.executor&quot;: &quot;Run&quot;,
     &quot;Python.sqlite_view.executor&quot;: &quot;Run&quot;,
     &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
     &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
     &quot;git-widget-placeholder&quot;: &quot;main&quot;,
     &quot;last_opened_file_path&quot;: &quot;C:/Endava/EnDevLocal/PYCHARMproj/Dava_X/ms_API_math_comp&quot;,
-    &quot;settings.editor.selected.configurable&quot;: &quot;terminal&quot;
+    &quot;settings.editor.selected.configurable&quot;: &quot;preferences.pluginManager&quot;
   }
 }</component>
   <component name="RecentsManager">

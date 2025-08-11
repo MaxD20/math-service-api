@@ -3,6 +3,9 @@
 from fastapi import FastAPI
 
 
+# from math_service.services.messaging_service import publish_log
+
+
 from math_service.controllers import math_controller
 
 

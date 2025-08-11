@@ -7,6 +7,11 @@ from math_service.schemas.math_schema import (
 from math_service.services.math_services import power, factorial, fibonacci
 from math_service.models.request_log_model import log_to_db
 from math_service.schemas.log_schema import LogEntry
+from math_service.services.messaging_service import publish_log
+import logging
+
+logger = logging.getLogger(__name__)
+
 
 print(">>> math_controller.py loaded!")
 router = APIRouter()
@@ -24,6 +29,8 @@ async def compute_pow(data: PowerRequest):
             status_code=200
         )
         log_to_db(entry)
+        publish_log(entry)
+        logger.info("Published pow → RabbitMQ: %r", entry)
         return MathResponse(result=result)
     except Exception as e:
         entry = LogEntry(
@@ -33,6 +40,8 @@ async def compute_pow(data: PowerRequest):
             status_code=400
         )
         log_to_db(entry)
+        publish_log(entry)
+        logger.error("Failed pow, published error -> RabbitMQ: %r", entry)
         raise HTTPException(status_code=400, detail=str(e))
 
 
@@ -47,6 +56,8 @@ async def compute_factorial(data: FactorialRequest):
             status_code=200
         )
         log_to_db(entry)
+        publish_log(entry)
+        logger.info("Published factorial → RabbitMQ: %r", entry)
         return MathResponse(result=result)
     except Exception as e:
         entry = LogEntry(
@@ -56,6 +67,8 @@ async def compute_factorial(data: FactorialRequest):
             status_code=400
         )
         log_to_db(entry)
+        publish_log(entry)
+        logger.error("Failed factorial, published error → RabbitMQ: %r", entry)
         raise HTTPException(status_code=400, detail=str(e))
 
 
@@ -70,6 +83,8 @@ async def compute_fibonacci(data: FibonacciRequest):
             status_code=200
         )
         log_to_db(entry)
+        publish_log(entry)
+        logger.info("Published fibonacci → RabbitMQ: %r", entry)
         return MathResponse(result=result)
     except Exception as e:
         entry = LogEntry(
@@ -79,4 +94,6 @@ async def compute_fibonacci(data: FibonacciRequest):
             status_code=400
         )
         log_to_db(entry)
+        publish_log(entry)
+        logger.error("Failed fibonacci, published error → RabbitMQ: %r", entry)
         raise HTTPException(status_code=400, detail=str(e))
