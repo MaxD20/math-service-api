@@ -2,4 +2,4 @@ fastapi
 pydantic
 uvicorn
 pika
-prometheus-client
+prometheus_client

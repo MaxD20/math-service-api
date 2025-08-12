@@ -1,15 +1,16 @@
 import pika
+import os
 import logging
 from math_service.schemas.log_schema import LogEntry
 
 
 logger = logging.getLogger(__name__)
-RABBITMQ_PARAMS = pika.ConnectionParameters(host="localhost")
+# RABBITMQ_PARAMS = pika.ConnectionParameters(host="localhost")
+RABBITMQ_HOST = os.getenv("RABBITMQ_HOST", "localhost")
+RABBITMQ_PARAMS = pika.ConnectionParameters(host=RABBITMQ_HOST)
 
 
 def publish_log(entry: LogEntry) -> None:
-
-    connection = None
 
     try:
         message_body = entry.model_dump_json()
@@ -31,7 +32,7 @@ def publish_log(entry: LogEntry) -> None:
         )
 
     except pika.exceptions.AMQPConnectionError as e:
-        logger.error("Could not publish to RabbitMQ, skipping log publish: %s", e)
+        logger.error("Could not publish to RabbitMQ at %s: %s", RABBITMQ_HOST, e)
 
     except Exception as e:
         logger.exception("Unexpected error in publish_log(): %s", e)

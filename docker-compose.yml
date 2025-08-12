@@ -1,0 +1,40 @@
+# docker-compose.yml
+
+services:
+  fastapi-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: math-service-api
+    ports:
+      - "8000:8000"
+      - "8001:8001"
+    environment:
+
+      RABBITMQ_HOST: rabbitmq
+
+      DB_PATH: /app/requests.db
+    depends_on:
+      - rabbitmq
+    volumes:
+
+      - ./requests.db:/app/requests.db
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+
+    volumes:
+       - rabbitmq-data:/var/lib/rabbitmq
+
+volumes:
+  rabbitmq-data:
+    driver: local
+
+

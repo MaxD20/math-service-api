@@ -1,6 +1,7 @@
 # Maxim Dragos, Data Engineer
 
 from fastapi import APIRouter, HTTPException
+from fastapi import Depends
 from math_service.schemas.math_schema import (
     PowerRequest, FactorialRequest, FibonacciRequest, MathResponse
 )
@@ -8,6 +9,7 @@ from math_service.services.math_services import power, factorial, fibonacci
 from math_service.models.request_log_model import log_to_db
 from math_service.schemas.log_schema import LogEntry
 from math_service.services.messaging_service import publish_log
+from math_service.security import require_api_key
 import logging
 
 logger = logging.getLogger(__name__)
@@ -17,7 +19,8 @@ print(">>> math_controller.py loaded!")
 router = APIRouter()
 
 
-@router.post("/pow", response_model=MathResponse)
+@router.post("/pow", response_model=MathResponse,
+             dependencies=[Depends(require_api_key)])
 async def compute_pow(data: PowerRequest):
     print(">>>> /api/pow CALLED with", data)
     try:
@@ -45,7 +48,8 @@ async def compute_pow(data: PowerRequest):
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.post("/factorial", response_model=MathResponse)
+@router.post("/factorial", response_model=MathResponse,
+             dependencies=[Depends(require_api_key)])
 async def compute_factorial(data: FactorialRequest):
     try:
         result = factorial(data.n)
@@ -72,7 +76,8 @@ async def compute_factorial(data: FactorialRequest):
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.post("/fibonacci", response_model=MathResponse)
+@router.post("/fibonacci", response_model=MathResponse,
+             dependencies=[Depends(require_api_key)])
 async def compute_fibonacci(data: FibonacciRequest):
     try:
         result = fibonacci(data.n)

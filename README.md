@@ -2,78 +2,164 @@
 
 Maxim Dragos, Data Engineer
 
-- A FastAPI that uses a microservice for computing mathematical operations, such as: 
-power, factorial, Fibonacci with request/response logging to an SQLite database.
-- The API utilize Pydantic models, supports in memory caching, and provides an interactive Swagger UI. 
-- The program was developed using MVCS (model - view - controller - service) principles.
+- A FastAPI microservice for computing mathematical operations, such as: 
+power, factorial, N-th Fibonacci number.
+
+
+- It uses MVCS principles, Pydantic for request/response validation, logs requests to SQLite, caches in memory, and offers Docker containerization, RabbitMQ logging, API-Key authorization and Prometheus monitoring.
 
 ## Features perspective
 
-- The endpoints used are:
-- POST /api/pow that compute a^b
-- POST /api/factorial that compute factorial of n
-- POST /api/fibonacci that compute n-th Fibonacci number
+- **Endpoints**:
+- POST /api/pow -> compute a^b
+- POST /api/factorial -> compute n!
+- POST /api/fibonacci -> compute n-th Fibonacci number
 
-Every API call is logged in requests.db (requests_logs table) with operation, input, result and status code.
 
-For the interactive Docs, it used browse and test endpoints at /docs(Swagger UI)
-- Backend: FastAPI application(app.py)
-- Database: SQLite (requests.db in project root)
-- Logging: Each successful or failed request is stored by log_to_db in request_log_model.py
-- Caching: In memory cache avoid recomputation for repeated requests
-- Containerization: Dockerfile and .dockerignore
-- Logging: RabbitMQ
+- **Database, logging to SQLite**:
+- Every API call is logged in requests.db (requests_logs table) with operation, input, result and HTTP status code.
+
+
+- **Interactive docs**:
+- Swagger UI at /docs for live testing.
+
+
+- **Backend**: 
+- FastAPI application(app.py)
+
+
+- **Containerization**: 
+- Dockerfile and .dockerignore for portable builds
+
+
+- **RabbitMQ logging**:
+- Async publish of each log entry to a math_logs fanout
+
+
+- **API-Key Authorization**
+- Header check (X-API-Key) to protect endpoints
+
+
+- **Prometheus Monitoring**
+- Exposes /metrics on port 8001 for requests counts and latency histogram
+
+
+- **Caching**: 
+- In memory cache avoid recomputation for repeated requests
+
 
 ## Architecture breakdown:
-- The models(math_service/models/): contains request_log_model.py that handles database tables initialization and provide the log_to_db
-function to record each API request and response in the requests_logs table of SQLite.
-- Views(app.py) initializes the FastAPI application, includes the main API router, and exposes a health check endpoint(/)
-- Controllers(math_service/controllers/): math_controller.py defines all API endpoints (/api/pow, /api/factorial, /api/fibonacci) orchestrates
-input validation, error handling, result construction and logging via Models.
-- Services(math_service/services/): contains business logic for mathematical operations(power, factorial, Fibonacci), and integrates a simple
-in memory caching layer for performance
-- Schemas (math_service/schemas/): math_schema.py defines request/response Pydantic models for strict validation, log_schema.py is a pydantic model for a log entry, used by both controller and the logging model.
+
+- **Models**(math_service/models/)
+- requst_log_model.py: initializes SQLite schema and provides log_to_db()
+
+
+- **Schemas**(math_service/schemas/)
+- math_schema.py: Pydantic models for request/response
+- log_schema.py: Pydantic omdel for log entry
+
+
+- **Services**(math_service/services/)
+- math_services.py: business logic (power, factorial, Fibonacci) and caching
+- messaging_service.py: publishes log entries to RabbitMQ
+
+
+- **Controllers**(math_service/controllers)
+- math_controller.py: defines /api/* endpoints, orchestrates service calls, logging, publishes to RabbitMQ
+
+
+- **Views & App Entry**
+- math_service/app.py: sets up FastAPI, includes router, adds middleware for Prometheus, mounts /metrics, and applies API-Key dependency.
+
+
+- **Workers**(math_service/workers/)
+- rabbit_consumer.py: consumer that reads from math_logs exchange and prints messages
+
 
 ## Working principle
-- **Client** sends a request to an endpoint (/api/pow) by Swagger UI, curl, or HTTP client.
-- **Controller** (math_controller.py) receives the request, validates the input using Pydantic schemas.
-- **Service** (math_services.py) computes the result, using cache if possible.
-- **Controller** logs each request(inputs, result, status code) by calling log_to_db from Model (reques_log_model.py)
-- **View** (app.py) ties everything together and provides a root check.
+- **Client** sends a request to an endpoint (/api/pow) by Swagger UI, curl, or HTTP client with valid X-API-Key.
+
+
+- **Middleware** checks API Key, records start time.
+
+
+- **Controller** (math_controller.py) 
+- Receives the request
+- Validates the input using Pydantic
+- Calls service function in math_services.py
+- receives result
+- Logs to SQLite(log_to_db())
+- Publishes log entry to RabbitMQ(publish_log())
+
+
+- **Middleware** measures latency and increments Prometheus counters.
+
+
+- **App** returns JSON response { "result": <value> }
+
+
+- **Consumer** used by RabbitMQ and process logs asynchronously
+
 
 ## Content
-- app.py -> app entrypoint(view)
-- requests.db -> SQLite database
-- math_controller.py -> API endpoints (controller)
-- request_log_model,py -> Database logic (model)
-- math_schema.py -> API input/output model(schema)
-- log_schema.py -> log entry model (schema)
-- math_services.py -> bussiness logic and caching (service)
-- sqlite_view.py -> connects SQLite database and prints out both the list of tables and all rows from the requests_logs table.
-- test_math_service.py -> This script contains unit tests for your mathematical business logic in the Service layer (math_services.py)
-- requirements.txt -> python dependencies
-- Dockerfile -> Docker image build instructions
-- .dockerignore -> files excluded from Docker build context
+**Code**
+- math_service/app.py -> FastAPI app entrypoint(view), metrics, auth
+
+
+- math_service/models/request_log_model.py -> SQLite logging
+
+
+- math_service/schemas/math_schema.py & log_schema.py -> Pydantic models
+
+
+- math_service/services/math_services.py & messaging_service.py -> logic and RabbitMQ
+
+
+- math_service/controllers/math_controller.py -> endpoints
+
+
+- math_service/workers/rabbit_consumer.py -> RabbitMQ consumer
+
+
+**Config & Docs**
+- requirements.txt -> Python dependencies
+- Dockerfile & .dockerignore -> container build
+- docker-compose.yml -> orchestrate FastAPI + RabbitMQ
+
+
+**Data**
+- requests.db -> SQLite database file
+
+
+**Tests**
+- test_math_service.py -> unit test for service layer
+
 
 
 ## How to run the server:
-- python -m uvicorn math_service.app:app
-- Open docs http://127.0.0.1:8000/docs
-- Check logs, open requests.db with DB Browser for SQLite (after server has stopped)
+**Locally**
+- 1.Activate and install
+- .venv\Scripts\Activate
+- pip install -r requirements.txt
 
-- Logging example: curl -X POST "http://127.0.0.1:8000/api/pow" -H "Content-Type: application/json" -d "{\"a\":2,\"b\":8}"
-returns { "result": 256 } and logs the operation and result to requests.db in the requests_logs table.
 
-## Docker containerization: approach and steps
-- To ensure portability, the project is Docker containerized. To facilitate run and deploy across environments.
-- Base image: official Python slim image
-- **Working directory**: /app
-- **Dependencies**: copies requirements.txt and installs all packages
-- **Source Code**: all project files copied to container
-- **Expose Port**: 8000 for FastAPI access
-- **Entrypoint**: Runs FastAPI by Uvicorn
-- A .dockerignore file was created to prevent unnecessary files (Python cache, virtual environments, IDE settings from being 
-included in the Docker build context, to keep the image smaller and builds cleaner
+- 2.Start FastAPI
+- uvicorn math_service.app:app --reload
+
+
+- 3.Browse docs
+- enter on http://127.0.0.1:8000/docs
+
+
+- 4.Try
+- curl -X POST http://127.0.0.1:8000/api/pow \ -H "Content-Type: application/json" \ -d '{"a":2, "b":8}'
+
+
+- 5.Logs inspection
+- After server has stopped, open requests.db with any SQLite GUI to see requests_logs entries.
+
+
+
 
 ## Build and run the Docker container
 - Command that tell Docker to build an image "math-service-api" from the directory
@@ -81,7 +167,7 @@ included in the Docker build context, to keep the image smaller and builds clean
 
 
 - To start the container and make the app available locally. -p 8000:8000 maps port 8000 in the container to port 8000 on the machine
-docker run -p 8000:8000 math-service-api
+- docker run -p 8000:8000 math-service-api
 
 
 - A volume mount was used to prevent losing data between container runs
@@ -96,28 +182,96 @@ docker run -p 8000:8000 math-service-api
 
 - curl -X POST "http://localhost:8000/api/pow" -H "Content-Type: application/json" -d '{"a": 2, "b": 3}'
 
+
+## Docker containerization: approach and steps
+- To ensure portability, the project is Docker containerized. To facilitate run and deploy across environments.
+- Base image: official Python slim image
+- **Working directory**: /app
+- **Dependencies**: copies requirements.txt and installs all packages
+- **Source Code**: all project files merged to container
+- **Expose Port**: 8000 for FastAPI access
+- **Entrypoint**: Runs FastAPI by Uvicorn
+- A .dockerignore file was created to prevent unnecessary files (Python cache, virtual environments, IDE settings from being 
+included in the Docker build context, to keep the image smaller and builds cleaner
+
+**In Docker**
+- Instructions provided to run in a GitBash terminal
+
+
+- 1.Build Image
+- docker build -t math_service-api .
+
+
+- 2.Run container
+- docker run -d \
+  --name math-service-api \
+  -p 8000:8000 \
+  -v "$(pwd)/requests.db:/app/requests.db" \
+  math-service-api
+- p 8000:8000 -> host -> container
+- -v .../requests.db:... -> persist logs
+
+
+- 3.Tests from host
+- curl -X POST http://localhost:8000/api/factorial \
+  -H "Content-Type: application/json" \
+  -d '{"n":5}'
+
+
+- 4.View docs
+- http://localhost:8000/docs
+
+
 ## RabbitMQ Logging Integration
 - Open a terminal in WSL or GitBash
 - Run RabbitMQ in Docker to create the broker and management UI
-- docker run -d \
-- --name rabbitmq \
--  -p 5672:5672 \
--  -p 15672:15672 \
--  rabbitmq:3-management
 
-- Open the management UI and on the http://localhost:15672 connect with guest credentials as user and pswd
-- publish_log(entry) added to math_controller.py
-- start the FastAPI app in one terminal by uvicorn math_service.app:app --reload
+- 1.Start broker
+- docker run -d name rabbitmq -p 5672:5672 -p 15672:15672 rabbitmq:3-management
 
-- Start the RabbitMQ consumer in another terminal
-- python math_service/workers/rabbit_consumer.py
 
-- send a test request in 3rd terminal
+- 2.Wire
+- Controllers now call publish_log(entry) after log_to_db
+- A small consumer script (workers/rabbit_consumer.py) reads from the math logs exchange
+
+
+- Open the management UI and on the http://localhost:15672 connect with guest credentials as user and password
+
+- 3.Running
+- Terminal 1: uvicorn math_service.app:app --reload
+- Terminal 2: python math_service/workers/rabbit_consumer.py
+- Terminal 3: send a request
+- curl -X POST http://localhost:8000/api/fibonacci \
+-H "Content-Type: application/json" \
+-d '{"n":7}'
 
 - curl -X POST http://localhost:8000/api/factorial \
   -H "Content-Type: application/json" \
   -d '{"n": 5}'
 
-- In FastAPI logs will appear Published factorial -> RabbitMQ
-- In consumer terminal wil be displayed the JSON log printed
-- On the RabbitMQ UI, Exchange section, the math_logs will appear with Publish spikes
+
+- Observe terminal 1: "Published fibonacci -> RabbitMQ"
+- Observe terminal 2: JSON log output
+- RabbitMQ UI(http://localhost:15672 -> Exchanges -> math_logs) displays message activity
+
+
+## API-Key Authorization Integration
+- To ensure only clients with a valid key may call /api/*:
+- 1.Middleware inspects X-API-Key header on each request
+- 2.In security.py, a check against a configured key(e.g: mathapikey47)
+- 3.Requests missing or using the wrong key receive 401 Unauthorized
+
+- Example:
+- curl -X POST http://localhost:8000/api/pow \
+  -H "X-API-Key: mathapikey47" \
+  -H "Content-Type: application/json" \
+  -d '{"a":3,"b":4}'
+
+- return {"result":81}
+
+- python -m uvicorn math_service.app:app
+- Open docs http://127.0.0.1:8000/docs
+- Check logs, open requests.db with DB Browser for SQLite (after server has stopped)
+
+- Logging example: curl -X POST "http://127.0.0.1:8000/api/pow" -H "Content-Type: application/json" -d "{\"a\":2,\"b\":8}"
+returns { "result": 256 } and logs the operation and result to requests.db in the requests_logs table.
